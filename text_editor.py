@@ -123,10 +123,12 @@ class TextEditor:
             for c in sub_line
         ]
 
-    def get_lines(self) -> List[str]:
+    def get_display_lines(self) -> List[str]:
+        """Returns a list of display lines."""
         return self._logic_lines
 
-    def get_sub_lines(self) -> List[List[str]]:
+    def get_logic_lines(self) -> List[List[str]]:
+        """Returns a list of logic lines. Each logic line is a list of display lines."""
         return self._display_lines
 
     # Line limit
@@ -258,73 +260,6 @@ class TextEditor:
         # add the column offset inside the target wrapped line
         abs_index = min(abs_index + col, len(self._text))
         return abs_index
-
-    def _absolute_to_wrapped_index_new(self, abs_index: int) -> tuple[int, int]:
-        """
-        Convert an absolute index in the original text into a wrapped (line, col).
-
-        Returns (wrapped_line_index, col) where:
-          - wrapped_line_index is the zero-based index counting *wrapped sub-lines*
-            across the whole document (first sub-line of first original line is 0).
-          - col is the column inside that wrapped sub-line. It may equal len(subline)
-            in the case the absolute index points to the newline immediately after a
-            subline that is the last subline of its original line.
-        Assumptions:
-          - self._wrapped_sub_lines is a list of original lines; each original line
-            is a list of its wrapped sub-lines (strings).
-          - There is a single newline character between original lines (length 1).
-          - We clamp abs_index to [0, len(self._text)] if self._text exists.
-        """
-        # clamp to valid range if we have the original text
-        abs_index = max(0, min(abs_index, len(self._text)))
-
-        wrapped_index = 0  # counts wrapped sub-lines across the whole doc
-        running_abs = 0  # absolute index while we walk sub-lines
-
-        for orig_line in self._display_lines:
-            num_sub = len(orig_line)
-            for i, sub in enumerate(orig_line):
-                start = running_abs
-                end = start + len(sub)  # exclusive end for the subline content
-
-                # Case 1: index falls strictly inside this subline content
-                if abs_index < end:
-                    return wrapped_index, abs_index - start
-
-                # Case 2: index equals end (right after this subline)
-                if abs_index == end:
-                    # If this subline is the last subline of the original line,
-                    # this position is the newline char — map it to this wrapped line
-                    if i == num_sub - 1:
-                        return wrapped_index, len(sub)
-                    # Otherwise, it's the start of the next subline (same original line).
-                    # We'll continue the loop and match the next subline (which has start==end).
-
-                # advance running_abs past this subline
-                running_abs = end
-                # If this was the last subline in its original line, account for newline char
-                if i == num_sub - 1:
-                    running_abs += 1
-
-                wrapped_index += 1
-
-        # If we get here, abs_index is beyond all characters (e.g., equal to len(text))
-        # Map to the last wrapped sub-line, at its end.
-        if wrapped_index == 0:
-            # no sub-lines at all (empty doc)
-            return 0, 0
-
-        # wrapped_index is now count of all sub-lines; last subline index is wrapped_index - 1
-        last_wrapped = wrapped_index - 1
-        # find the last subline length to set column correctly
-        # walk to last subline to fetch its length (cheap in practice)
-        for orig_line in self._display_lines[::-1]:
-            if orig_line:
-                last_sub = orig_line[-1]
-                return last_wrapped, len(last_sub)
-
-        # fallback (shouldn't happen)
-        return last_wrapped, 0
 
     def _absolute_to_wrapped_index(self, abs_index: int) -> Tuple[int, int]:
         """

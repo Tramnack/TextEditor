@@ -111,14 +111,14 @@ class TestInitTextEditor:
 
         # Empty text state
         assert editor.text == ""
-        assert editor.get_lines() == [""]
+        assert editor.get_display_lines() == [""]
 
         # Cursor should start at beginning
         assert editor.cursor == (0, 0)
         assert editor.line_cursor == (0, 0)
 
         # Sub-lines should also be empty
-        assert editor.get_sub_lines() == [[""]]
+        assert editor.get_logic_lines() == [[""]]
 
     class TestLineLimit:
         """Test validation and behavior of the line_limit parameter."""
@@ -158,8 +158,8 @@ class TestInitTextEditor:
             """None or empty string should initialize as empty."""
             editor = TextEditor(line_limit=10, text=text)
             assert editor.text == ""
-            assert editor.get_lines() == [""]
-            assert editor.get_sub_lines() == [[""]]
+            assert editor.get_display_lines() == [""]
+            assert editor.get_logic_lines() == [[""]]
 
         @pytest.mark.parametrize("text", ["", "a", "Hello"])
         def test_short_text_fits_within_limit(self, text):
@@ -168,75 +168,75 @@ class TestInitTextEditor:
             assert len(text) <= line_limit  # Make sure Test is valid
             editor = TextEditor(line_limit=line_limit, text=text)
             assert editor.text == text
-            assert editor.get_lines() == [text]
-            assert editor.get_sub_lines() == [[text]]
+            assert editor.get_display_lines() == [text]
+            assert editor.get_logic_lines() == [[text]]
 
         def test_text_equal_to_line_limit(self):
             """Text exactly equal to line_limit should remain on one line."""
             text = "Hello"  # len = 5
             editor = TextEditor(line_limit=len(text), text=text)
-            assert editor.get_lines() == [text]
+            assert editor.get_display_lines() == [text]
 
         def test_long_text_wraps_across_lines(self):
             """Text longer than line_limit should wrap into multiple lines."""
             text = "Hello!"
             editor = TextEditor(line_limit=len("Hello"), text=text)
             assert editor.text == text
-            assert editor.get_lines() == ["Hello", "!"]
-            assert editor.get_sub_lines() == [["Hello", "!"]]
+            assert editor.get_display_lines() == ["Hello", "!"]
+            assert editor.get_logic_lines() == [["Hello", "!"]]
 
         def test_multi_line_text_with_blank_line(self):
             """Newlines in text should create explicit empty lines."""
             text = "Hello!\n\nWorld"
             editor = TextEditor(line_limit=len("Hello"), text=text)
-            assert editor.get_lines() == ["Hello", "!", "", "World"]
-            assert editor.get_sub_lines() == [["Hello", "!"], [""], ["World"]]
+            assert editor.get_display_lines() == ["Hello", "!", "", "World"]
+            assert editor.get_logic_lines() == [["Hello", "!"], [""], ["World"]]
 
         def test_trailing_newline(self):
             """Trailing newline should add an empty last line."""
             text = "Hello\n"
             editor = TextEditor(line_limit=10, text=text)
-            assert editor.get_lines() == ["Hello", ""]
+            assert editor.get_display_lines() == ["Hello", ""]
 
         def test_multiple_consecutive_newlines(self):
             """Multiple consecutive newlines should create multiple empty lines."""
             text = "\n\n"
             editor = TextEditor(line_limit=10, text=text)
-            assert editor.get_lines() == ["", "", ""]
+            assert editor.get_display_lines() == ["", "", ""]
 
         def test_whitespace_only_text(self):
             """Whitespace-only text should be preserved."""
             line_limit = 10
             text = " " * line_limit
             editor = TextEditor(line_limit=line_limit, text=text)
-            assert editor.get_lines() == [text]
+            assert editor.get_display_lines() == [text]
 
         def test_newline_only_text(self):
             """Newline-only text should be preserved."""
             n = 5
             text = "\n" * n
             editor = TextEditor(line_limit=10, text=text)
-            assert editor.get_lines() == ["" for _ in range(n + 1)]
+            assert editor.get_display_lines() == ["" for _ in range(n + 1)]
 
         def test_tab_only_text(self):
             """Tabs are replaced with spaces."""
             line_limit = 10
             text = "\t" * 2
             editor = TextEditor(line_limit=line_limit, text=text)
-            assert editor.get_lines() == [text]
+            assert editor.get_display_lines() == [text]
 
         def test_long_word_wrapping(self):
             """Very long word should wrap without hyphenation."""
             text = "Supercalifragilisticexpialidocious"
             editor = TextEditor(line_limit=10, text=text)
-            lines = editor.get_lines()
+            lines = editor.get_display_lines()
             assert all(len(line) <= 10 for line in lines)
 
         def test_unicode_characters(self):
             """Unicode text should wrap correctly without breaking characters."""
             text = "你好世界"
             editor = TextEditor(line_limit=2, text=text)
-            assert editor.get_lines() == ["你好", "世界"]
+            assert editor.get_display_lines() == ["你好", "世界"]
 
         @pytest.mark.parametrize("text", [
             0, 0.0, ["Hello", "World"], [["Hello", "World"], ["Test"]], {"text": "Hello"}
@@ -265,8 +265,8 @@ class TestInitTextEditor:
 
             # Text is reset
             assert editor.text == ""
-            assert editor.get_lines() == [""]
-            assert editor.get_sub_lines() == [[""]]
+            assert editor.get_display_lines() == [""]
+            assert editor.get_logic_lines() == [[""]]
 
             # Cursor should reset to origin
             assert editor.cursor == (0, 0)
@@ -298,37 +298,37 @@ class TestLineLimit:
         """Shrinking line_limit should re-wrap lines."""
         editor = TextEditor(line_limit=10, text="Hello World!")
 
-        assert editor.get_sub_lines() == [["Hello Worl", "d!"]]
+        assert editor.get_logic_lines() == [["Hello Worl", "d!"]]
 
         editor.line_limit = 5
-        assert editor.get_sub_lines() == [["Hello", " Worl", "d!"]]
+        assert editor.get_logic_lines() == [["Hello", " Worl", "d!"]]
 
     def test_line_limit_setter_shrinks_with_newlines(self):
         """Shrinking line_limit should re-wrap lines with explicit newlines."""
         editor = TextEditor(line_limit=10, text="Hello\nWorld!")
 
-        assert editor.get_sub_lines() == [["Hello"], ["World!"]]
+        assert editor.get_logic_lines() == [["Hello"], ["World!"]]
 
         editor.line_limit = 5
-        assert editor.get_sub_lines() == [["Hello"], ["World", "!"]]
+        assert editor.get_logic_lines() == [["Hello"], ["World", "!"]]
 
     def test_line_limit_setter_expands_wrapping(self):
         """Expanding line_limit should reduce wrapping."""
         editor = TextEditor(line_limit=10, text="Hello World!")
 
-        assert editor.get_sub_lines() == [["Hello Worl", "d!"]]
+        assert editor.get_logic_lines() == [["Hello Worl", "d!"]]
 
         editor.line_limit = 20
-        assert editor.get_sub_lines() == [["Hello World!"]]
+        assert editor.get_logic_lines() == [["Hello World!"]]
 
     def test_line_limit_setter_expands_with_newlines(self):
         """Expanding line_limit should not merge across newlines."""
         editor = TextEditor(line_limit=10, text="Hello\nWorld!")
 
-        assert editor.get_sub_lines() == [["Hello"], ["World!"]]
+        assert editor.get_logic_lines() == [["Hello"], ["World!"]]
 
         editor.line_limit = 20
-        assert editor.get_sub_lines() == [["Hello"], ["World!"]]
+        assert editor.get_logic_lines() == [["Hello"], ["World!"]]
 
     @pytest.mark.parametrize("line_limit", [-100, -1, 0])
     def test_line_limit_setter_rejects_non_positive_integers(self, line_limit):
@@ -356,32 +356,32 @@ class TestLineLimit:
     def test_line_limit_setter_min_value(self):
         """line_limit=1 should wrap to single characters."""
         editor = TextEditor(line_limit=1, text="Hi!")
-        assert editor.get_sub_lines() == [["H", "i", "!"]]
+        assert editor.get_logic_lines() == [["H", "i", "!"]]
 
     def test_line_limit_setter_reset_back_and_forth(self):
         """Shrinking then expanding back should restore wrapping."""
         editor = TextEditor(line_limit=10, text="Hello World!")
-        assert editor.get_sub_lines() == [["Hello Worl", "d!"]]
+        assert editor.get_logic_lines() == [["Hello Worl", "d!"]]
 
         editor.line_limit = 5
-        assert editor.get_sub_lines() == [["Hello", " Worl", "d!"]]
+        assert editor.get_logic_lines() == [["Hello", " Worl", "d!"]]
 
         editor.line_limit = 10
-        assert editor.get_sub_lines() == [["Hello Worl", "d!"]]
+        assert editor.get_logic_lines() == [["Hello Worl", "d!"]]
 
     def test_line_limit_setter_on_empty_text(self):
         """Resizing line_limit on empty text should keep empty state."""
         editor = TextEditor(line_limit=10, text="")
         editor.line_limit = 5
-        assert editor.get_sub_lines() == [[""]]
+        assert editor.get_logic_lines() == [[""]]
 
     def test_line_limit_setter_no_change(self):
         """Resizing line_limit to same value should not change wrapping."""
         editor = TextEditor(line_limit=10, text="Hello World!")
-        assert editor.get_sub_lines() == [["Hello Worl", "d!"]]
+        assert editor.get_logic_lines() == [["Hello Worl", "d!"]]
 
         editor.line_limit = 10
-        assert editor.get_sub_lines() == [["Hello Worl", "d!"]]
+        assert editor.get_logic_lines() == [["Hello Worl", "d!"]]
 
 
 class TestCursor:
@@ -497,7 +497,7 @@ class TestCursor:
             line_limit = 10
             editor = TextEditor(line_limit=line_limit, text=text)
 
-            display_lines = editor.get_lines()
+            display_lines = editor.get_display_lines()
             display_line_nr = len(display_lines) - 1
             display_line_len = len(display_lines[-1])
 
@@ -548,7 +548,7 @@ class TestCursor:
             text = "Line 1\nLine 2\nLine 3"
             editor = TextEditor(line_limit=10, text=text)
 
-            lines = editor.get_lines()
+            lines = editor.get_display_lines()
             assert lines == text.split("\n")  # Make sure Test cases are valid (Display lines == logic lines)
 
             line_nr = len(lines) - 1  # Zero-indexed last line
@@ -576,7 +576,7 @@ class TestCursor:
 
             out_of_bounds = (line, char)
 
-            lines = editor.get_lines()
+            lines = editor.get_display_lines()
             assert lines == text.split("\n")  # Make sure Test cases are valid (Display lines == logic lines)
 
             line_nr = len(lines) - 1  # Zero-indexed last line
@@ -602,7 +602,7 @@ class TestCursor:
 
             out_of_bounds = (line, char)
 
-            lines = editor.get_lines()
+            lines = editor.get_display_lines()
             assert lines == text.split("\n")  # Make sure Test cases are valid (Display lines == logic lines)
 
             line_nr = len(lines) - 1  # Zero-indexed last line
@@ -723,12 +723,12 @@ class TestCursorMovement:
         def test_move_multi_logic_line_document(self):
             editor, text = editor_factory("Hel\nlo \nWor\nld!", cursor=(3, 0))
 
-            assert editor.get_lines()[3] == "ld!"
+            assert editor.get_display_lines()[3] == "ld!"
 
             for _ in range(6):
                 editor.move_left()
             assert editor.cursor == (1, 2)
-            assert editor.get_lines()[1] == "lo "
+            assert editor.get_display_lines()[1] == "lo "
 
             # movement must not change text
             assert editor.text == text
@@ -736,12 +736,12 @@ class TestCursorMovement:
         def test_move_multi_display_line_document(self):
             editor, text = editor_factory("Hello World!", line_limit=3, cursor=(3, 0))
 
-            assert editor.get_lines()[3] == "ld!"
+            assert editor.get_display_lines()[3] == "ld!"
 
             for _ in range(6):
                 editor.move_left()
             assert editor.cursor == (1, 0)
-            assert editor.get_lines()[1] == "lo "
+            assert editor.get_display_lines()[1] == "lo "
 
             # movement must not change text
             assert editor.text == text
@@ -749,12 +749,12 @@ class TestCursorMovement:
         def test_move_multi_line_document(self):
             editor, text = editor_factory("Hello\nWorld!", line_limit=3, cursor=(3, 0))
 
-            assert editor.get_lines()[3] == "ld!"
+            assert editor.get_display_lines()[3] == "ld!"
 
             for _ in range(6):
                 editor.move_left()
             assert editor.cursor == (1, 0)
-            assert editor.get_lines()[1] == "lo"
+            assert editor.get_display_lines()[1] == "lo"
 
             # movement must not change text
             assert editor.text == text
@@ -856,12 +856,12 @@ class TestCursorMovement:
         def test_move_multi_logic_line_document(self):
             editor, text = editor_factory("Hel\nlo \nWor\nld!", cursor=(0, 3))
 
-            assert editor.get_lines()[0] == "Hel"
+            assert editor.get_display_lines()[0] == "Hel"
 
             for _ in range(6):
                 editor.move_right()
             assert editor.cursor == (2, 1)
-            assert editor.get_lines()[2] == "Wor"
+            assert editor.get_display_lines()[2] == "Wor"
 
             # movement must not change text
             assert editor.text == text
@@ -870,12 +870,12 @@ class TestCursorMovement:
             line_limit = 3
             editor, text = editor_factory("Hello World!", line_limit=line_limit, cursor=(0, line_limit))
 
-            assert editor.get_lines()[0] == "Hel"
+            assert editor.get_display_lines()[0] == "Hel"
 
             for _ in range(6):
                 editor.move_right()
             assert editor.cursor == (3, 0)
-            assert editor.get_lines()[3] == "ld!"
+            assert editor.get_display_lines()[3] == "ld!"
 
             # movement must not change text
             assert editor.text == text
@@ -884,12 +884,12 @@ class TestCursorMovement:
             line_limit = 3
             editor, text = editor_factory("Hello\nWorld!", line_limit=line_limit, cursor=(0, line_limit))
 
-            assert editor.get_lines()[0] == "Hel"
+            assert editor.get_display_lines()[0] == "Hel"
 
             for _ in range(6):
                 editor.move_right()
             assert editor.cursor == (3, 0)
-            assert editor.get_lines()[3] == "ld!"
+            assert editor.get_display_lines()[3] == "ld!"
 
             # movement must not change text
             assert editor.text == text
@@ -1231,7 +1231,7 @@ class TestCursorMovement:
 
         editor.move_end()
 
-        display_lines = editor.get_lines()
+        display_lines = editor.get_display_lines()
         display_line_nr = len(display_lines) - 1
         display_line_len = len(display_lines[-1])
 
@@ -1259,8 +1259,8 @@ class TestInsert:
             editor.insert("")
 
             assert editor.text == text
-            assert editor.get_lines() == [text]
-            assert editor.get_sub_lines() == [[text]]
+            assert editor.get_display_lines() == [text]
+            assert editor.get_logic_lines() == [[text]]
             assert editor.cursor == (0, char)
 
         @pytest.mark.parametrize(
@@ -1286,8 +1286,8 @@ class TestInsert:
 
                 target_text = text + "!"
                 assert editor.text == target_text
-                assert editor.get_lines() == [target_text]
-                assert editor.get_sub_lines() == [[target_text]]
+                assert editor.get_display_lines() == [target_text]
+                assert editor.get_logic_lines() == [[target_text]]
                 assert editor.cursor == (0, len(target_text))
 
             def test_insert_char_middle(self):
@@ -1298,8 +1298,8 @@ class TestInsert:
 
                 target_text = text[:char] + " " + text[char:]
                 assert editor.text == target_text
-                assert editor.get_lines() == [target_text]
-                assert editor.get_sub_lines() == [[target_text]]
+                assert editor.get_display_lines() == [target_text]
+                assert editor.get_logic_lines() == [[target_text]]
                 assert editor.cursor == (0, 6)
 
             def test_insert_char_home(self):
@@ -1309,8 +1309,8 @@ class TestInsert:
 
                 target_text = "H" + text
                 assert editor.text == target_text
-                assert editor.get_lines() == [target_text]
-                assert editor.get_sub_lines() == [[target_text]]
+                assert editor.get_display_lines() == [target_text]
+                assert editor.get_logic_lines() == [[target_text]]
                 assert editor.cursor == (0, 1)
 
             def test_insert_char_at_limit(self):
@@ -1320,8 +1320,8 @@ class TestInsert:
                 editor.insert("!")
 
                 assert editor.text == text + "!"
-                assert editor.get_lines() == [text, "!"]
-                assert editor.get_sub_lines() == [[text, "!"]]
+                assert editor.get_display_lines() == [text, "!"]
+                assert editor.get_logic_lines() == [[text, "!"]]
 
                 assert editor.cursor == (1, 1)
                 assert editor.line_cursor == (0, len(text) + 1)
@@ -1333,8 +1333,8 @@ class TestInsert:
 
                 target_text = "H"
                 assert editor.text == target_text
-                assert editor.get_lines() == [target_text]
-                assert editor.get_sub_lines() == [[target_text]]
+                assert editor.get_display_lines() == [target_text]
+                assert editor.get_logic_lines() == [[target_text]]
                 assert editor.cursor == (0, 1)
                 assert editor.line_cursor == (0, 1)
 
@@ -1345,8 +1345,8 @@ class TestInsert:
                 editor.insert("!")
 
                 assert editor.text == "Hello!\nWorld!"
-                assert editor.get_lines() == ["Hello!", "World!"]
-                assert editor.get_sub_lines() == [["Hello!"], ["World!"]]
+                assert editor.get_display_lines() == ["Hello!", "World!"]
+                assert editor.get_logic_lines() == [["Hello!"], ["World!"]]
 
                 assert editor.cursor == (0, char + 1)
                 assert editor.line_cursor == (0, char + 1)
@@ -1359,8 +1359,8 @@ class TestInsert:
                 editor.insert("\n")
 
                 assert editor.text == text + "\n"
-                assert editor.get_lines() == ["Hello World!", ""]
-                assert editor.get_sub_lines() == [["Hello World!"], [""]]
+                assert editor.get_display_lines() == ["Hello World!", ""]
+                assert editor.get_logic_lines() == [["Hello World!"], [""]]
 
                 assert editor.cursor == (1, 0)
                 assert editor.line_cursor == (1, 0)
@@ -1372,8 +1372,8 @@ class TestInsert:
                 editor.insert("\n")
 
                 assert editor.text == "Hello\nWorld!"
-                assert editor.get_lines() == ["Hello", "World!"]
-                assert editor.get_sub_lines() == [["Hello"], ["World!"]]
+                assert editor.get_display_lines() == ["Hello", "World!"]
+                assert editor.get_logic_lines() == [["Hello"], ["World!"]]
 
                 assert editor.cursor == (1, 0)
                 assert editor.line_cursor == (1, 0)
@@ -1384,8 +1384,8 @@ class TestInsert:
                 editor.insert("\n")
 
                 assert editor.text == "\nHello World!"
-                assert editor.get_lines() == ["", "Hello World!"]
-                assert editor.get_sub_lines() == [[""], ["Hello World!"]]
+                assert editor.get_display_lines() == ["", "Hello World!"]
+                assert editor.get_logic_lines() == [[""], ["Hello World!"]]
 
                 assert editor.cursor == (1, 0)
                 assert editor.line_cursor == (1, 0)
@@ -1397,8 +1397,8 @@ class TestInsert:
                 editor.insert("\n")
 
                 assert editor.text == text + "\n"
-                assert editor.get_lines() == [text, ""]
-                assert editor.get_sub_lines() == [[text], [""]]
+                assert editor.get_display_lines() == [text, ""]
+                assert editor.get_logic_lines() == [[text], [""]]
 
                 assert editor.cursor == (1, 0)
                 assert editor.line_cursor == (1, 0)
@@ -1410,8 +1410,8 @@ class TestInsert:
                 editor.insert("\n")
 
                 assert editor.text == "Hello\nWorld!"
-                assert editor.get_lines() == ["Hel", "lo", "Wor", "ld!"]
-                assert editor.get_sub_lines() == [["Hel", "lo"], ["Wor", "ld!"]]
+                assert editor.get_display_lines() == ["Hel", "lo", "Wor", "ld!"]
+                assert editor.get_logic_lines() == [["Hel", "lo"], ["Wor", "ld!"]]
 
                 assert editor.cursor == (2, 0)
                 assert editor.line_cursor == (1, 0)
@@ -1422,8 +1422,8 @@ class TestInsert:
                 editor.insert("\n")
 
                 assert editor.text == "\n"
-                assert editor.get_lines() == ["", ""]
-                assert editor.get_sub_lines() == [[""], [""]]
+                assert editor.get_display_lines() == ["", ""]
+                assert editor.get_logic_lines() == [[""], [""]]
 
                 assert editor.cursor == (1, 0)
                 assert editor.line_cursor == (1, 0)
@@ -1442,8 +1442,8 @@ class TestInsert:
                 editor.insert(character)
 
                 assert editor.text == f"Hello{character}World!"
-                assert editor.get_lines() == [f"Hello{character}World!"]
-                assert editor.get_sub_lines() == [[f"Hello{character}World!"]]
+                assert editor.get_display_lines() == [f"Hello{character}World!"]
+                assert editor.get_logic_lines() == [[f"Hello{character}World!"]]
 
                 assert editor.cursor == (0, char + 1)
                 assert editor.line_cursor == (0, char + 1)
@@ -1470,8 +1470,8 @@ class TestInsert:
 
                 target_text = text + "World!"
                 assert editor.text == target_text
-                assert editor.get_lines() == [target_text]
-                assert editor.get_sub_lines() == [[target_text]]
+                assert editor.get_display_lines() == [target_text]
+                assert editor.get_logic_lines() == [[target_text]]
 
                 assert editor.cursor == (0, len(target_text))
                 assert editor.line_cursor == (0, len(target_text))
@@ -1484,8 +1484,8 @@ class TestInsert:
 
                 target_text = "Hello big World!"
                 assert editor.text == target_text
-                assert editor.get_lines() == [target_text]
-                assert editor.get_sub_lines() == [[target_text]]
+                assert editor.get_display_lines() == [target_text]
+                assert editor.get_logic_lines() == [[target_text]]
 
                 assert editor.cursor == (0, char + len(" big"))
                 assert editor.line_cursor == (0, char + len(" big"))
@@ -1497,8 +1497,8 @@ class TestInsert:
 
                 target_text = "Hello " + text
                 assert editor.text == target_text
-                assert editor.get_lines() == [target_text]
-                assert editor.get_sub_lines() == [[target_text]]
+                assert editor.get_display_lines() == [target_text]
+                assert editor.get_logic_lines() == [[target_text]]
 
                 assert editor.cursor == (0, len("Hello "))
                 assert editor.line_cursor == (0, len("Hello "))
@@ -1511,8 +1511,8 @@ class TestInsert:
                 editor.insert(insert_text)
 
                 assert editor.text == text + insert_text
-                assert editor.get_lines() == [text, insert_text]
-                assert editor.get_sub_lines() == [[text, insert_text]]
+                assert editor.get_display_lines() == [text, insert_text]
+                assert editor.get_logic_lines() == [[text, insert_text]]
 
                 assert editor.cursor == (1, len(insert_text))
                 assert editor.line_cursor == (0, len(text + insert_text))
@@ -1525,8 +1525,8 @@ class TestInsert:
 
                 editor.insert(insert_text)
                 assert editor.text == text + insert_text
-                assert editor.get_lines() == [text, " big ", "World", "!"]
-                assert editor.get_sub_lines() == [[text, " big ", "World", "!"]]
+                assert editor.get_display_lines() == [text, " big ", "World", "!"]
+                assert editor.get_logic_lines() == [[text, " big ", "World", "!"]]
 
                 assert editor.cursor == (3, 1)
                 assert editor.line_cursor == (0, len(text + insert_text))
@@ -1538,8 +1538,8 @@ class TestInsert:
                 editor.insert(insert_text)
 
                 assert editor.text == insert_text
-                assert editor.get_lines() == [insert_text]
-                assert editor.get_sub_lines() == [[insert_text]]
+                assert editor.get_display_lines() == [insert_text]
+                assert editor.get_logic_lines() == [[insert_text]]
 
                 assert editor.cursor == (0, len(insert_text))
                 assert editor.line_cursor == (0, len(insert_text))
@@ -1552,8 +1552,8 @@ class TestInsert:
                 editor.insert(insert_text)
 
                 assert editor.text == insert_text
-                assert editor.get_lines() == [insert_text]
-                assert editor.get_sub_lines() == [[insert_text]]
+                assert editor.get_display_lines() == [insert_text]
+                assert editor.get_logic_lines() == [[insert_text]]
 
                 assert editor.cursor == (0, len(insert_text))
                 assert editor.line_cursor == (0, len(insert_text))
@@ -1596,8 +1596,8 @@ class TestRemoveText:
             editor.delete()
 
             assert editor.text == text[1:]
-            assert editor.get_lines() == [text[1:]]
-            assert editor.get_sub_lines() == [[text[1:]]]
+            assert editor.get_display_lines() == [text[1:]]
+            assert editor.get_logic_lines() == [[text[1:]]]
 
             # Cursor stays in place
             assert editor.cursor == (0, 0)
@@ -1611,8 +1611,8 @@ class TestRemoveText:
             editor.delete()
 
             assert editor.text == text
-            assert editor.get_lines() == [text]
-            assert editor.get_sub_lines() == [[text]]
+            assert editor.get_display_lines() == [text]
+            assert editor.get_logic_lines() == [[text]]
 
             assert editor.cursor == (0, len(text))
             assert editor.line_cursor == (0, len(text))
@@ -1627,8 +1627,8 @@ class TestRemoveText:
             editor.delete()
 
             assert editor.text == "HelloWorld!"
-            assert editor.get_lines() == ["Hello", "World", "!"]
-            assert editor.get_sub_lines() == [["Hello", "World", "!"]]
+            assert editor.get_display_lines() == ["Hello", "World", "!"]
+            assert editor.get_logic_lines() == [["Hello", "World", "!"]]
 
             assert editor.cursor == (1, 0)
             assert editor.line_cursor == (0, line_limit)
@@ -1643,8 +1643,8 @@ class TestRemoveText:
 
             target_text = "HelloWorld!"
             assert editor.text == target_text
-            assert editor.get_lines() == [target_text]
-            assert editor.get_sub_lines() == [[target_text]]
+            assert editor.get_display_lines() == [target_text]
+            assert editor.get_logic_lines() == [[target_text]]
 
             assert editor.cursor == (0, len("Hello"))
             assert editor.line_cursor == (0, len("Hello"))
@@ -1660,8 +1660,8 @@ class TestRemoveText:
             editor.backspace()
 
             assert editor.text == text
-            assert editor.get_lines() == [text]
-            assert editor.get_sub_lines() == [[text]]
+            assert editor.get_display_lines() == [text]
+            assert editor.get_logic_lines() == [[text]]
 
             assert editor.cursor == (0, 0)
             assert editor.line_cursor == (0, 0)
@@ -1674,8 +1674,8 @@ class TestRemoveText:
             editor.backspace()
 
             assert editor.text == text[:-1]
-            assert editor.get_lines() == [text[:-1]]
-            assert editor.get_sub_lines() == [[text[:-1]]]
+            assert editor.get_display_lines() == [text[:-1]]
+            assert editor.get_logic_lines() == [[text[:-1]]]
 
             assert editor.cursor == (0, len(text) - 1)
             assert editor.line_cursor == (0, len(text) - 1)
@@ -1688,8 +1688,8 @@ class TestRemoveText:
             editor.backspace()
 
             assert editor.text == "Hell World!"
-            assert editor.get_lines() == ["Hell ", "World", "!"]
-            assert editor.get_sub_lines() == [["Hell ", "World", "!"]]
+            assert editor.get_display_lines() == ["Hell ", "World", "!"]
+            assert editor.get_logic_lines() == [["Hell ", "World", "!"]]
 
             assert editor.cursor == (0, len("Hello") - 1)
             assert editor.line_cursor == (0, len("Hello") - 1)
@@ -1703,8 +1703,8 @@ class TestRemoveText:
 
             target_text = "HelloWorld!"
             assert editor.text == target_text
-            assert editor.get_lines() == [target_text]
-            assert editor.get_sub_lines() == [[target_text]]
+            assert editor.get_display_lines() == [target_text]
+            assert editor.get_logic_lines() == [[target_text]]
 
             assert editor.cursor == (0, len("Hello"))
             assert editor.line_cursor == (0, len("Hello"))
