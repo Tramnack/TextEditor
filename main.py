@@ -54,6 +54,7 @@ def _display(stdscr, editor: TextEditor):
 
         for display_line_nr, sub_line in enumerate(display_lines):
             is_cursor_line = (total_lines == line_c)
+            sub_line = sub_line.replace(" ", "·")  # Make whitespace visible
 
             if is_cursor_line:
                 total_lines = _render_with_cursor(
