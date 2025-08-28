@@ -12,7 +12,7 @@ class UnsupportedCharacterError(Exception):
 
 
 class TextEditor:
-    UNSUPPORTED_CHARS = ["\a", "\b", "\f", "\r", "\v"]
+    UNSUPPORTED_CHARS = ["\a", "\b", "\f", "\r", "\v", "\t"]
 
     def __init__(self, line_limit: int, text: Optional[str] = None, ):
 

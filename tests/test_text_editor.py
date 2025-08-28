@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from typing import Tuple, Optional
 
 import pytest
@@ -6,6 +5,7 @@ import pytest
 from interfaces import AbstractTestHorizontalMove, AbstractTestVerticalMove
 from text_editor import TextEditor, UnsupportedCharacterError
 
+UNSUPPORTED_CHARS = ["\a", "\b", "\f", "\r", "\t", "\v"]
 
 def editor_factory(
         text: str = "",
@@ -132,13 +132,6 @@ class TestInitTextEditor:
             text = "\n" * n
             editor = TextEditor(line_limit=10, text=text)
             assert editor.get_display_lines() == ["" for _ in range(n + 1)]
-
-        def test_tab_only_text(self):
-            """Tabs are replaced with spaces."""
-            line_limit = 10
-            text = "\t" * 2
-            editor = TextEditor(line_limit=line_limit, text=text)
-            assert editor.get_display_lines() == [text]
 
         def test_long_word_wrapping(self):
             """Very long word should wrap without hyphenation."""
@@ -1347,7 +1340,7 @@ class TestInsert:
             # Insert special characters
             @pytest.mark.parametrize(
                 "character",
-                ["\\", "\'", "\"", "\t", " "]
+                ["\\", "\'", "\"", " "]
             )
             def test_insert_special_char(self, character):
                 # Insert character with no special effects
@@ -1365,7 +1358,7 @@ class TestInsert:
 
             @pytest.mark.parametrize(
                 "character",
-                ["\a", "\b", "\f", "\r", "\v"]
+                UNSUPPORTED_CHARS
             )
             def test_insert_unsupported_special_char(self, character):
                 import re
@@ -1479,7 +1472,7 @@ class TestInsert:
         class TestInsertTextWithSpecialCharacters:
             @pytest.mark.parametrize(
                 "character",
-                ["\a", "\b", "\f", "\r", "\v"]
+                UNSUPPORTED_CHARS
             )
             def test_insert_unsupported_special_char(self, character):
                 import re
@@ -1490,11 +1483,11 @@ class TestInsert:
 
             @pytest.mark.parametrize(
                 "character_1",
-                ["\a", "\b", "\f", "\r", "\v"]
+                UNSUPPORTED_CHARS
             )
             @pytest.mark.parametrize(
                 "character_2",
-                ["\a", "\b", "\f", "\r", "\v"]
+                UNSUPPORTED_CHARS
             )
             def test_insert_multiple_unsupported_special_char(self, character_1, character_2):
                 import re
