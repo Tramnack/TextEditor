@@ -78,9 +78,7 @@ class TextEditor:
             char = len(self._logic_lines[line])
         else:
             char = min(char, len(self._logic_lines[line]))
-        # print(line, char)
         self._abs_cursor = min(self._wrapped_to_absolute_index(line, char), len(self._text))
-        # print(self._abs_cursor)
 
     # Text
     @property
@@ -274,7 +272,7 @@ class TextEditor:
                     # allow cursor to sit "on" newline if last display line
                     if i == len(logic_line) - 1:
                         return wrapped_line, abs_index
-                    line_offset, char_index = divmod(abs_index, self._line_limit)
+                    line_offset, char_index = divmod(abs_index, len(display_line))
                     return wrapped_line + line_offset, char_index
                 else:
                     abs_index -= len(display_line)
