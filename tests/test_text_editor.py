@@ -1453,10 +1453,13 @@ class TestInsert:
                 ["\a", "\b", "\f", "\r", "\v"]
             )
             def test_insert_unsupported_special_char(self, character):
+                import re
                 editor, _ = editor_factory("Hello World!")
 
+                escaped = re.escape(repr(character))
+
                 with pytest.raises(UnsupportedCharacterError,
-                                   match=f"Unsupported character: {character}"):
+                                   match=rf"Unsupported character: {escaped}"):
                     editor.insert(character)
 
     class TestInsertText:
@@ -1564,8 +1567,10 @@ class TestInsert:
                 ["\a", "\b", "\f", "\r", "\v"]
             )
             def test_insert_unsupported_special_char(self, character):
+                import re
+                escaped = re.escape(repr(character))
                 with pytest.raises(UnsupportedCharacterError,
-                                   match=f"Unsupported character: {character}"):
+                                   match=rf"Unsupported character: {escaped}"):
                     editor_factory(f"Hello{character}World!")
 
             @pytest.mark.parametrize(
@@ -1577,8 +1582,11 @@ class TestInsert:
                 ["\a", "\b", "\f", "\r", "\v"]
             )
             def test_insert_multiple_unsupported_special_char(self, character_1, character_2):
+                import re
+                escape_1 = re.escape(repr(character_1))
+                escape_2 = re.escape(repr(character_2))
                 with pytest.raises(UnsupportedCharacterError,
-                                   match=f"Unsupported character: {character_1}|{character_2}"):
+                                   match=rf"Unsupported character: {escape_1}|{escape_2}"):
                     editor_factory(f"Hello{character_1}World!{character_2}")
 
 

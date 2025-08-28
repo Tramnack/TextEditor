@@ -1,13 +1,10 @@
 from typing import List, Tuple, Optional
 
-UNSUPPORTED_CHARS = ["\a", "\b", "\f", "\r", "\v"]
-
-
 class UnsupportedCharacterError(Exception):
     """Exception raised when an unsupported character is encountered."""
 
     def __init__(self, char: str):
-        self.message = f"Unsupported character: {char}"
+        self.message = f"Unsupported character: {repr(char)}"
         super().__init__(self.message)
 
     def __str__(self):
@@ -15,6 +12,8 @@ class UnsupportedCharacterError(Exception):
 
 
 class TextEditor:
+    UNSUPPORTED_CHARS = ["\a", "\b", "\f", "\r", "\v"]
+
     def __init__(self, line_limit: int, text: Optional[str] = None, ):
 
         self.__validate_line_limit(line_limit)
@@ -194,12 +193,11 @@ class TextEditor:
             raise TypeError("text must be of type str")
         elif len(text) == 0:
             return
-        elif any(c in text for c in UNSUPPORTED_CHARS):
-            for c in UNSUPPORTED_CHARS:
-                if c in text:
-                    raise UnsupportedCharacterError(c)
-        else:
-            self._insert(text)
+
+        for c in self.UNSUPPORTED_CHARS:
+            if c in text:
+                raise UnsupportedCharacterError(c)
+        self._insert(text)
 
     def _insert(self, text: str):
         """Insert text at current cursor position"""

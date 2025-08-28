@@ -1,6 +1,6 @@
 import curses
 
-from text_editor import TextEditor
+from text_editor import TextEditor, UnsupportedCharacterError
 
 
 def _movement_factory(editor: TextEditor):
@@ -28,6 +28,9 @@ def _keystroke(stdscr, editor: TextEditor, movement_dict: dict):
         try:
             editor.insert(chr(key))
         except ValueError:
+            # Simply ignore invalid characters
+            pass
+        except UnsupportedCharacterError:
             # Simply ignore invalid characters
             pass
         return False
