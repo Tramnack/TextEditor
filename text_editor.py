@@ -18,8 +18,8 @@ class TextEditor:
 
         self.__validate_line_limit(line_limit)
 
-        self._logic_lines = None
-        self._display_lines = None
+        self._logic_lines: List[List[str]] = None
+        self._display_lines: List[str] = None
 
         self._line_limit = line_limit
         self._text = ""
@@ -50,7 +50,7 @@ class TextEditor:
         line, char = self._absolute_to_wrapped_index(self._abs_cursor)
 
         total_lines = 0
-        for i, l in enumerate(self._display_lines):
+        for i, l in enumerate(self._logic_lines):
             total_chars = 0
             for s, sub_line in enumerate(l):
                 if total_lines == line:
@@ -72,12 +72,12 @@ class TextEditor:
             char -= self._line_limit
             line += 1
 
-        line = min(line, len(self._logic_lines))
-        if line >= len(self._logic_lines):
-            line = len(self._logic_lines) - 1
-            char = len(self._logic_lines[line])
+        line = min(line, len(self._display_lines))
+        if line >= len(self._display_lines):
+            line = len(self._display_lines) - 1
+            char = len(self._display_lines[line])
         else:
-            char = min(char, len(self._logic_lines[line]))
+            char = min(char, len(self._display_lines[line]))
         self._abs_cursor = min(self._wrapped_to_absolute_index(line, char), len(self._text))
 
     # Text
@@ -112,21 +112,21 @@ class TextEditor:
                 raw_line = raw_line[self._line_limit:]
             sub_lines.append(raw_line)  # remainder (possibly empty string)
             lines.append(sub_lines)
-        self._display_lines = lines
+        self._logic_lines = lines
 
-        self._logic_lines = [
+        self._display_lines = [
             c
-            for sub_line in self._display_lines
+            for sub_line in self._logic_lines
             for c in sub_line
         ]
 
     def get_display_lines(self) -> List[str]:
         """Returns a list of display lines."""
-        return self._logic_lines
+        return self._display_lines
 
     def get_logic_lines(self) -> List[List[str]]:
         """Returns a list of logic lines. Each logic line is a list of display lines."""
-        return self._display_lines
+        return self._logic_lines
 
     # Line limit
     @staticmethod
@@ -183,7 +183,7 @@ class TextEditor:
         self.cursor = 0, 0
 
     def move_end(self):
-        self.cursor = len(self._logic_lines) - 1, len(self._logic_lines[-1])
+        self.cursor = len(self._display_lines) - 1, len(self._display_lines[-1])
 
     # Text Manipulation
     def insert(self, text: str):
@@ -237,7 +237,7 @@ class TextEditor:
         abs_index = 0
         remaining_wrapped = line  # how many wrapped display-lines we still need to skip
 
-        for orig_display_lines in self._display_lines:
+        for orig_display_lines in self._logic_lines:
             count = len(orig_display_lines)
 
             if remaining_wrapped >= count:
@@ -266,7 +266,7 @@ class TextEditor:
         abs_index = max(0, min(abs_index, len(self._text)))
 
         wrapped_line = 0
-        for logic_line in self._display_lines:
+        for logic_line in self._logic_lines:
             for i, display_line in enumerate(logic_line):
                 if abs_index <= len(display_line):
                     # allow cursor to sit "on" newline if last display line
@@ -281,4 +281,4 @@ class TextEditor:
             abs_index -= 1
 
         # fall back: clamp to last wrapped subline, end of line
-        return wrapped_line - 1, len(self._display_lines[-1][-1])
+        return wrapped_line - 1, len(self._logic_lines[-1][-1])
