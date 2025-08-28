@@ -160,24 +160,18 @@ class TextEditor:
     def move_up(self):
         line, char = self.cursor
 
-        line -= 1
-
-        if char == self._line_limit:
-            char = 0
-            line += 1
-        if line < 0 or char < 0:
-            line = 0
-            char = 0
-        self.cursor = line, char
+        if line == 0:
+            self.move_home()
+        else:
+            self.cursor = line - 1, char
 
     def move_down(self):
         line, char = self.cursor
 
-        if char == self._line_limit:
-            char = 0
-
-        line += 1
-        self.cursor = line, char
+        if line == len(self._display_lines) - 1:
+            self.move_end()
+        else:
+            self.cursor = line + 1, char
 
     def move_home(self):
         self.cursor = 0, 0
